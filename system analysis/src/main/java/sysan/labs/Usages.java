@@ -77,11 +77,7 @@ public class Usages {
 		}
 		return result;
 	}
-	
-	private static double exponentialPsi() {
-		double result = 0;
-	}
-	
+		
 	/**
 	 * Calculates values of coefficients for approximating  
 	 * of our functions on last stage. Approximates function with sum
