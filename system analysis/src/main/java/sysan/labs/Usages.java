@@ -12,6 +12,8 @@ public class Usages {
 	
 	private static SolverFactory SOLVER = SolverFactory.SMART;
 	
+	private static double eps = 1e-7;
+	
 	/**
 	 * Chebyshev polynomial.
 	 * Look at {@link http://en.wikipedia.org/wiki/	Chebyshev_polynomials} for formula
@@ -98,7 +100,9 @@ public class Usages {
 		}
     	    	
     	try{    
-    		Vector lambdas = lambdasMatrix.withSolver(SOLVER).solve(vector);
+    		//Vector lambdas = lambdasMatrix.withSolver(SOLVER).solve(vector);
+    		Vector init = LinearAlgebra.BASIC1D_FACTORY.createVector(lambdasMatrix.columns());
+    		Vector lambdas = NonlinearConjugateGradientMethod.solve(lambdasMatrix, vector, init, eps);
     		Vector check = lambdasMatrix.multiply(lambdas);    		
     		System.out.println("Lambdas inaccuracy: " + compareVectors(check, vector));
     		Matrix result = LinearAlgebra.BASIC2D_FACTORY.createMatrix(X.columns(), precise);
@@ -131,7 +135,9 @@ public class Usages {
 		}
 		
 		try{
-			Vector result = components.withSolver(SOLVER).solve(vector);
+			//Vector result = components.withSolver(SOLVER).solve(vector);
+			Vector init = LinearAlgebra.BASIC1D_FACTORY.createVector(components.columns());
+			Vector result = NonlinearConjugateGradientMethod.solve(components, vector, init, eps);
 			Vector check = components.multiply(result);
 			System.out.println("Components searching inaccuracy: " + compareVectors(check, vector));
 			return result;
@@ -162,7 +168,9 @@ public class Usages {
 		}
 		
 		try{
-			Vector result = fnl.withSolver(SOLVER).solve(vector);
+			//Vector result = fnl.withSolver(SOLVER).solve(vector);
+			Vector init = LinearAlgebra.BASIC1D_FACTORY.createVector(fnl.columns());
+			Vector result = NonlinearConjugateGradientMethod.solve(fnl, vector, init, eps);
 			Vector check = fnl.multiply(result);
 			System.out.println("Final searching inaccurancy: " + compareVectors(check, vector));
 			
@@ -180,7 +188,8 @@ public class Usages {
 			finally{
 				outFile.close();
 			}
-					
+			
+			
 			return result;
 		}
 		catch(Exception ex){

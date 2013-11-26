@@ -12,7 +12,7 @@ import org.la4j.vector.Vector;
 
 public class SecondLab {
 	
-	private static int precise = 6;
+	private static int precise = 7;
 	
 	public static void  main (String[] args){
 		List<Vector> x = new ArrayList<Vector>();

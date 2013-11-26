@@ -3,27 +3,57 @@ package sysan.labs;
 import org.la4j.matrix.*;
 import org.la4j.vector.*;
 
-import static java.lang.Math.*;
-
 public class NonlinearConjugateGradientMethod {
 	private static int maxIterations = 10000;
-	
-	private static Vector formGradient(Matrix A, Vector x){
-		return A.transpose().multiply(A.multiply(x).add(x.multiply(-1.0))).multiply(2);
+		
+	private static double form(Matrix A, Vector x, Vector b){
+		return Math.pow(A.multiply(x).add(b.multiply(-1.0)).norm(), 2);
 	}
 	
-	public static Vector solve(Matrix A, Vector b, Vector initial, double accourancy){
-		Vector newX = initial.copy();
-		Vector oldX = initial.copy();
-		Vector oldP = formGradient(A, initial).multiply(-1.0);
-		Vector newP;
+	private static Vector formGradient(Matrix A, Vector x, Vector b){
+		return A.transpose().multiply(A.multiply(x).add(b.multiply(-1.0))).multiply(2);
+	}
+	
+	private static Vector alphaLineSearch(Matrix A, Vector b, Vector x, Vector s){
+		int k = 0;
+		
+		Vector newX = x.copy();
+		Vector oldX = x.copy();
+		double newF = form(A, x, b);
+		double oldF = form(A, x, b);
+		double alpha = 0.00001;
+		
+		do{
+			k++;
+			oldX = newX;
+			newX = oldX.add(s.multiply(alpha));
+			oldF = newF;
+			newF = form(A, newX, b);
+			
+		}while((newF < oldF) && (k < maxIterations));
+		
+		return  oldX;
+		
+	}
+	
+	public static Vector solve(Matrix A, Vector b, Vector initial, double accourancy){		
+		Vector oldX = initial.copy();				
+		Vector oldGradient = formGradient(A, initial, b).multiply(-1.0);
+		Vector newX = alphaLineSearch(A, b, oldX, oldGradient);
+		Vector newGradient = formGradient(A, initial, b).multiply(-1.0);
+		Vector direction = newGradient.copy();
+		
 		int k = 0;
 		double beta = 1;
-		while ((k++ < maxIterations) && (formGradient(A, oldX).norm() > accourancy)){			
-			newP = formGradient(A, oldX).multiply(-1.0).add(oldP.multiply(beta));
-			beta = Math.pow(formGradient(A, newX).norm(), 2) / Math.pow(formGradient(A, oldX).norm(), 2); 
-			newX = oldX.add(vector)
+		while ((k++ < maxIterations) && (formGradient(A, oldX, b).norm() > accourancy)){			
+			newGradient = formGradient(A, newX, b).multiply(-1.0);
+			beta = Math.pow(formGradient(A, newX, b).norm(), 2) / Math.pow(formGradient(A, oldX, b).norm(), 2);
+			direction = newGradient.add(direction.multiply(beta));
+			oldX = newX.copy();
+			newX = alphaLineSearch(A, b, oldX, direction);		
 		}
+		
+		return oldX;
 		
 	}
 }
