@@ -1,6 +1,7 @@
 package sysan.labs;
 
 import org.la4j.LinearAlgebra;
+
 import org.la4j.matrix.*;
 import org.la4j.vector.*;
 
@@ -19,6 +20,7 @@ public class GaussSeidelSolver {
 	 */
 	public static Vector solve(Matrix A, Vector b, Vector initial, double accourancy){
 		int  k = 0;
+		int n = initial.length();
 		double delta = 1.;
 		
 		Vector newX = LinearAlgebra.BASIC1D_FACTORY.createVector(initial);
@@ -27,17 +29,18 @@ public class GaussSeidelSolver {
 		while ((k < maxIterations) &&(accourancy < delta)){
 			k++;
 						
-			for (int i = 0; i < initial.length(); i++){
+			for (int i = 0; i < n; i++){
 				double sum = 0;
-				for (int j = 0; j < initial.length(); j++){
-					if (j == i){
+				for (int j = 0; j < n; j++){
+					if (j != i){
 						sum += A.get(i, j) * newX.get(j);
 					}						
 				}
 				newX.set(i, (- sum + b.get(i)) / A.get(i, i));
 			}
 			
-			//delta = Math.abs(newX.norm())
+			delta = Math.abs(newX.norm() - oldX.norm());
+			oldX = newX.copy();
 		}
 		
 		return newX;
