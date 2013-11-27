@@ -83,6 +83,8 @@ public class SecondLab {
 		System.out.println(result1);
 		System.out.println(result2);
 		System.out.println(result3);	
+		
+		
 	}
 
 }
