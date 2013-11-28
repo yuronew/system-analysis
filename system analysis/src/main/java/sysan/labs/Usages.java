@@ -1,54 +1,23 @@
 package sysan.labs;
 
+import sysan.labs.polynomials.*;
+
 import java.io.PrintWriter;
 import java.util.List;
 
 import org.la4j.LinearAlgebra;
-import org.la4j.LinearAlgebra.SolverFactory;
 import org.la4j.matrix.Matrix;
 import org.la4j.vector.Vector;
 
-public class Usages {
-	
-	private static SolverFactory SOLVER = SolverFactory.SMART;
+import sysan.labs.polynomials.Polynomial;
+
+public class Usages {	
 	
 	private static double eps = 1e-7;
 	
-	/**
-	 * Chebyshev polynomial.
-	 * Look at {@link http://en.wikipedia.org/wiki/	Chebyshev_polynomials} for formula
-	 * @param k
-	 * @param x
-	 * @return
-	 */
-	private static double Chebyshev(int k, double x)
-	{
-		if (k == 0){
-			return 1;
-		}
-		else if (k == 1){
-			return x;
-		}
-		else{			
-			return 2*x*Chebyshev(k-1, x) - Chebyshev(k-2, x);
-		}
-	}
+	private static Polynomial polynomial = new ShiftedChebyshev();
+	private static Polynomial polynomialForMult = new Legendre(); 
 	
-	/**
-	 * Shifted Chebyshev polynomial. Based on {@link Usages#Chebyshev} 
-	 * @param k
-	 * @param x
-	 * @return
-	 */
-	private static double ShiftedChebyshev(int k, double x)
-	{
-		if (k == 0)
-		{
-			return 0.5;
-		}
-		return Chebyshev(k, 2*x - 1);
-	}
-
 	private static double compareVectors(Vector first, Vector second){
 		if (first.length() != second.length()){
 			throw new IllegalArgumentException("Vectors dimensions does not match! ");
@@ -67,31 +36,39 @@ public class Usages {
 	private static double psi(Vector lambdas, double x){
 		double result = 0;
 		for (int i = 0; i < lambdas.length(); i++){
-			result += lambdas.get(i) * ShiftedChebyshev(i, x); 
+			result += lambdas.get(i) * polynomial.value(i, x); 
 		}
 		return result;
 	}
 	
-	private static double fi(Vector components, Matrix lambdas, double x){
+	private static double fi(Vector components, Matrix lambdas, Vector x){
+		if (components.length() != x.length()){
+			throw new IllegalArgumentException("Error while calculating function fi: vector " +
+					"a and x dimensions does not mathes!");
+		}
 		double result = 0;
 		for (int i = 0; i < components.length(); i++){
-			result += components.get(i) * psi(lambdas.getRow(i), x); 
+			result += components.get(i) * psi(lambdas.getRow(i), x.get(i)); 
 		}
 		return result;
 	}
 	
-	private static double fiForMult(Vector components, Matrix lambdas, double x){
+	private static double fiForMult(Vector components, Matrix lambdas, Vector x){
+		if (components.length() != x.length()){
+			throw new IllegalArgumentException("Error while calculating function fi: vector " +
+					"a and x dimensions does not mathes!");
+		}
 		double result = 0;
 		for (int i = 0; i < components.length(); i++){
-			result += components.get(i) * Math.log(1 + psi(lambdas.getRow(i), x)); 
+			result += components.get(i) * Math.log(1 + psiForMult(lambdas.getRow(i), x.get(i))); 
 		}
-		return result;
+		return Math.exp(result) - 1;
 	}
 	
 	private static double psiForMult(Vector lambdas, double x){
 		double result = 0;
 		for (int i = 0; i < lambdas.length(); i++){
-			result += lambdas.get(i) * Math.log((1 + ShiftedChebyshev(i, x))); 
+			result += lambdas.get(i) * Math.log((1 + polynomialForMult.value(i, x))); 
 		}
 		return Math.exp(result) - 1;
 	}
@@ -113,7 +90,7 @@ public class Usages {
     	for (int i = 0; i < lambdasMatrix.rows(); i++){
 			for (int j = 0; j < lambdasMatrix.columns(); j++){				
 				double x = X.get(i, j / precise);
-				lambdasMatrix.set(i, j, ShiftedChebyshev(j % precise, x));				
+				lambdasMatrix.set(i, j, polynomial.value(j % precise, x));				
 			}			
 		}
     	    	
@@ -150,7 +127,8 @@ public class Usages {
     	for (int i = 0; i < lambdasMatrix.rows(); i++){
 			for (int j = 0; j < lambdasMatrix.columns(); j++){				
 				double x = X.get(i, j / precise);
-				lambdasMatrix.set(i, j, Math.log(1 + Chebyshev(j % precise, x)));				
+				double value = Math.log(1 + polynomialForMult.value(j % precise, x));
+				lambdasMatrix.set(i, j, value);				
 			}			
 		}
     	    	
@@ -184,6 +162,7 @@ public class Usages {
 	 */
 	public static Vector calculateComponents(Matrix X, Matrix lambdas, Vector vector){
 		Matrix components = LinearAlgebra.BASIC2D_FACTORY.createMatrix(vector.length(), X.columns());
+		 
 		for (int i = 0; i < components.rows(); i++){
 			for (int j = 0; j < X.columns(); j++){
 				components.set(i, j, psi(lambdas.getRow(j), X.getColumn(j).get(i)));
@@ -245,11 +224,11 @@ public class Usages {
 	 * @param filePath
 	 * @return
 	 */
-	public static Vector calculateFinal(List<Vector> components, List<Matrix> lambdas, Matrix X, Vector vector, String filePath){
+	public static Vector calculateFinal(List<Vector> components, List<Matrix> lambdas, List<Matrix> X, Vector vector, String filePath){
 		Matrix fnl = LinearAlgebra.BASIC2D_FACTORY.createMatrix(vector.length(), components.size());
 		for (int i = 0; i < fnl.rows(); i++){
 			for (int j = 0; j < fnl.columns(); j++){
-				double x = Math.log(1 + fi(components.get(j), lambdas.get(j), X.getColumn(j).get(i)));
+				double x = fi(components.get(j), lambdas.get(j), X.get(j).getRow(i));
 				fnl.set(i, j, x);
 			}
 		}
@@ -257,8 +236,17 @@ public class Usages {
 		try{
 			//Vector result = fnl.withSolver(SOLVER).solve(vector);
 			Vector init = LinearAlgebra.BASIC1D_FACTORY.createVector(fnl.columns());
-			Vector result = NonlinearConjugateGradientMethod.solve(fnl, vector, init, eps);
-			Vector check = fnl.multiply(result);
+			Vector result = NonlinearConjugateGradientMethod.solve(fnl, vector, init, eps);			
+						
+			Vector check = LinearAlgebra.BASIC1D_FACTORY.createVector(vector.length());
+			for (int i = 0; i < check.length(); i++){
+				double sum = 0;
+				for (int j = 0; j < components.size(); j++){
+					sum += result.get(j) * fi(components.get(j), lambdas.get(j), X.get(j).getRow(i));
+				}
+				check.set(i, sum);
+			}
+			
 			System.out.println("Final searching inaccurancy: " + compareVectors(check, vector));
 			
 			Matrix out = LinearAlgebra.BASIC2D_FACTORY.createMatrix(check.length(), 2);
@@ -295,11 +283,11 @@ public class Usages {
 	 * @param filePath
 	 * @return
 	 */
-	public static Vector calculateFinalForMult(List<Vector> components, List<Matrix> lambdas, Matrix X, Vector vector, String filePath){
+	public static Vector calculateFinalForMult(List<Vector> components, List<Matrix> lambdas, List<Matrix> X, Vector vector, String filePath){
 		Matrix fnl = LinearAlgebra.BASIC2D_FACTORY.createMatrix(vector.length(), components.size());
 		for (int i = 0; i < fnl.rows(); i++){
 			for (int j = 0; j < fnl.columns(); j++){
-				double x = fiForMult(components.get(j), lambdas.get(j), X.getColumn(j).get(i));
+				double x = Math.log(1 + fiForMult(components.get(j), lambdas.get(j), X.get(j).getRow(i)));
 				fnl.set(i, j, x);
 			}
 		}
@@ -308,7 +296,8 @@ public class Usages {
 			//Vector result = fnl.withSolver(SOLVER).solve(vector);
 			Vector init = LinearAlgebra.BASIC1D_FACTORY.createVector(fnl.columns());
 			Vector result = NonlinearConjugateGradientMethod.solve(fnl, vector, init, eps);
-			Vector check = fnl.multiply(result);
+			Vector check = fnl.multiply(result);					
+			
 			System.out.println("Final searching inaccurancy: " + compareVectors(check, vector));
 			
 			Matrix out = LinearAlgebra.BASIC2D_FACTORY.createMatrix(check.length(), 2);

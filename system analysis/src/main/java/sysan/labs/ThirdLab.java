@@ -12,11 +12,14 @@ import org.la4j.vector.Vector;
 
 public class ThirdLab {
 	
-	private static int precise = 6;
+	private static int precise = 10;
 	
 	public static void main(String[] args){
 		List<Vector> x = new ArrayList<Vector>();
-    	List<Vector> y = new ArrayList<Vector>();    	
+    	List<Vector> y = new ArrayList<Vector>();    
+    	int x1 = 2;
+    	int x2 = 2;
+    	int x3 = 3;
     	try
     	{    		
     		y.add(new Basic2DMatrix(Matrices.asSymbolSeparatedSource(new FileInputStream("resources/lab3/y1.csv"))).toColumnVector());    	
@@ -49,39 +52,35 @@ public class ThirdLab {
 			Y.setColumn(y.indexOf(vector), vector.add(-vector.min()).divide(vector.max()-vector.min()));
 		}				
 		
-		Vector averageY = LinearAlgebra.DENSE_FACTORY.createVector(n);		
-		for (int k = 0; k < averageY.length(); k++)
-		{
-			averageY.set(k, Math.log(((Y.maxInRow(k) + Y.minInRow(k)) / 2) + 1));			
+		for(int i = 0; i < Y.columns(); i++){
+			
+			Matrix lambdas = Usages.calculateLambdasForMult(X,Y.getColumn(i), precise);
+			System.out.println(lambdas);		
+			Matrix lambdas1 = lambdas.slice(0, 0, x1, lambdas.columns());
+			Matrix lambdas2 = lambdas.slice(x1, 0, x1 + x2, lambdas.columns());
+			Matrix lambdas3 = lambdas.slice(x1 + x2, 0, x1 + x2 + x3, lambdas.columns());
+			
+			Vector components = Usages.calculateComponentsForMult(X, lambdas, Y.getColumn(i));		
+			List<Vector> components1 = new ArrayList<Vector>();
+			
+			components1.add(components.slice(0, x1));
+			components1.add(components.slice(x1, x1 + x2));
+			components1.add(components.slice(x1 + x2, x1 + x2 + x3));
+					
+			List<Matrix> lambdasList = new ArrayList<Matrix>();
+			lambdasList.add(lambdas1);
+			lambdasList.add(lambdas2);
+			lambdasList.add(lambdas3);
+			
+			List<Matrix> xList= new ArrayList<Matrix>();
+			xList.add(X.slice(0, 0, n, x1));
+			xList.add(X.slice(0, x1, n, x1 + x2));
+			xList.add(X.slice(0, x1 + x2, n, x1 + x2 + x3));
+		
+			Vector result = Usages.calculateFinalForMult(components1, lambdasList, xList, 
+					Y.getColumn(i), "resources/lab3/Result[" + i +"].csv");			
+		
+			System.out.println(result);	
 		}
-				
-		Matrix lambdas = Usages.calculateLambdasForMult(X,averageY, precise);
-		System.out.println(lambdas);		
-		Matrix lambdas1 = lambdas.slice(0, 0, 2, lambdas.columns());
-		Matrix lambdas2 = lambdas.slice(2, 0, 4, lambdas.columns());
-		Matrix lambdas3 = lambdas.slice(4, 0, 7, lambdas.columns());
-		Vector components1 = Usages.calculateComponentsForMult(X.slice(0, 0, n, 2), lambdas1, Y.getColumn(0).add(1.0));
-		Vector components2 = Usages.calculateComponentsForMult(X.slice(0, 2, n, 4), lambdas2, Y.getColumn(1).add(1.0));
-		Vector components3 = Usages.calculateComponentsForMult(X.slice(0, 4, n, 7), lambdas3, Y.getColumn(2).add(1.0));
-		System.out.println(components1);
-		System.out.println(components2);
-		System.out.println(components3);
-		List<Vector> components = new ArrayList<Vector>();		
-		components.add(components1);
-		components.add(components2);
-		components.add(components3);
-		
-		List<Matrix> lambdasList = new ArrayList<Matrix>();
-		lambdasList.add(lambdas1);
-		lambdasList.add(lambdas2);
-		lambdasList.add(lambdas3);
-	
-		Vector result1 = Usages.calculateFinalForMult(components, lambdasList, X, Y.getColumn(0).add(1.0), "resources/lab2/Result3[0].csv");			
-		Vector result2 = Usages.calculateFinalForMult(components, lambdasList, X, Y.getColumn(1).add(1.0), "resources/lab2/Result3[1].csv");
-		Vector result3 = Usages.calculateFinalForMult(components, lambdasList, X, Y.getColumn(2).add(1.0), "resources/lab2/Result3[2].csv");
-		
-		System.out.println(result1);
-		System.out.println(result2);
-		System.out.println(result3);	
 	}
 }

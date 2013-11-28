@@ -16,7 +16,10 @@ public class SecondLab {
 	
 	public static void  main (String[] args){
 		List<Vector> x = new ArrayList<Vector>();
-    	List<Vector> y = new ArrayList<Vector>();    	
+    	List<Vector> y = new ArrayList<Vector>(); 
+    	int x1 = 2;
+    	int x2 = 2;
+    	int x3 = 3;
     	try
     	{    		
     		y.add(new Basic2DMatrix(Matrices.asSymbolSeparatedSource(new FileInputStream("resources/lab2/y1.csv"))).toColumnVector());    	
@@ -48,43 +51,37 @@ public class SecondLab {
 		for(Vector vector:y){			
 			Y.setColumn(y.indexOf(vector), vector.add(-vector.min()).divide(vector.max()-vector.min()));
 		}				
-		
-		Vector averageY = LinearAlgebra.DENSE_FACTORY.createVector(n);		
-		for (int k = 0; k < averageY.length(); k++)
-		{
-			averageY.set(k, (Y.maxInRow(k) + Y.minInRow(k)) / 2);			
-		}
 				
-		Matrix lambdas = Usages.calculateLambdas(X,averageY, precise);
-		System.out.println(lambdas);		
-		Matrix lambdas1 = lambdas.slice(0, 0, 2, lambdas.columns());
-		Matrix lambdas2 = lambdas.slice(2, 0, 4, lambdas.columns());
-		Matrix lambdas3 = lambdas.slice(4, 0, 7, lambdas.columns());
-		Vector components1 = Usages.calculateComponents(X.slice(0, 0, n, 2), lambdas1, Y.getColumn(0));
-		Vector components2 = Usages.calculateComponents(X.slice(0, 2, n, 4), lambdas2, Y.getColumn(1));
-		Vector components3 = Usages.calculateComponents(X.slice(0, 4, n, 7), lambdas3, Y.getColumn(2));
-		System.out.println(components1);
-		System.out.println(components2);
-		System.out.println(components3);
-		List<Vector> components = new ArrayList<Vector>();		
-		components.add(components1);
-		components.add(components2);
-		components.add(components3);
+		for(int i = 0; i < Y.columns(); i++){
+				
+			Matrix lambdas = Usages.calculateLambdas(X,Y.getColumn(i), precise);
+			System.out.println(lambdas);		
+			Matrix lambdas1 = lambdas.slice(0, 0, x1, lambdas.columns());
+			Matrix lambdas2 = lambdas.slice(x1, 0, x1 + x2, lambdas.columns());
+			Matrix lambdas3 = lambdas.slice(x1 + x2, 0, x1 + x2 + x3, lambdas.columns());
+			
+			Vector components = Usages.calculateComponents(X, lambdas, Y.getColumn(i));		
+			List<Vector> components1 = new ArrayList<Vector>();
+			
+			components1.add(components.slice(0, x1));
+			components1.add(components.slice(x1, x1 + x2));
+			components1.add(components.slice(x1 + x2, x1 + x2 + x3));
+					
+			List<Matrix> lambdasList = new ArrayList<Matrix>();
+			lambdasList.add(lambdas1);
+			lambdasList.add(lambdas2);
+			lambdasList.add(lambdas3);
+			
+			List<Matrix> xList= new ArrayList<Matrix>();
+			xList.add(X.slice(0, 0, n, x1));
+			xList.add(X.slice(0, x1, n, x1 + x2));
+			xList.add(X.slice(0, x1 + x2, n, x1 + x2 + x3));
 		
-		List<Matrix> lambdasList = new ArrayList<Matrix>();
-		lambdasList.add(lambdas1);
-		lambdasList.add(lambdas2);
-		lambdasList.add(lambdas3);
-	
-		Vector result1 = Usages.calculateFinal(components, lambdasList, X, Y.getColumn(0), "resources/lab2/Result[0].csv");			
-		Vector result2 = Usages.calculateFinal(components, lambdasList, X, Y.getColumn(1), "resources/lab2/Result[1].csv");
-		Vector result3 = Usages.calculateFinal(components, lambdasList, X, Y.getColumn(2), "resources/lab2/Result[2].csv");
+			Vector result = Usages.calculateFinal(components1, lambdasList, xList, 
+					Y.getColumn(i), "resources/lab2/Result[" + i +"].csv");			
 		
-		System.out.println(result1);
-		System.out.println(result2);
-		System.out.println(result3);	
-		
-		
+			System.out.println(result);	
+		}
 	}
 
 }

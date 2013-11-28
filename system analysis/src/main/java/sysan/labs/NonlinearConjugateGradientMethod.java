@@ -4,7 +4,7 @@ import org.la4j.matrix.*;
 import org.la4j.vector.*;
 
 public class NonlinearConjugateGradientMethod {
-	private static int maxIterations = 10000;
+	private static int maxIterations = 100000;
 		
 	private static double form(Matrix A, Vector x, Vector b){
 		return Math.pow(A.multiply(x).add(b.multiply(-1.0)).norm(), 2);
@@ -45,14 +45,26 @@ public class NonlinearConjugateGradientMethod {
 		
 		int k = 0;
 		double beta = 1;
-		while ((k++ < maxIterations) && (formGradient(A, oldX, b).norm() > accourancy)){			
+		//(formGradient(A, oldX, b).norm() > accourancy)
+		//form(A, oldX, b) > accourancy
+		double oldForm = form(A, oldX, b);
+		double newForm = form(A, newX, b);
+		while ((k++ < maxIterations) && (formGradient(A, oldX, b).norm() > accourancy) && (oldForm > newForm)){			
 			newGradient = formGradient(A, newX, b).multiply(-1.0);
 			beta = Math.pow(formGradient(A, newX, b).norm(), 2) / Math.pow(formGradient(A, oldX, b).norm(), 2);
 			direction = newGradient.add(direction.multiply(beta));
 			oldX = newX.copy();
-			newX = alphaLineSearch(A, b, oldX, direction);		
+			newX = alphaLineSearch(A, b, oldX, direction);
+			oldForm = form(A, oldX, b);
+			newForm = form(A, newX, b);
 		}
 		
+		if (k >= maxIterations){
+			System.out.println("Reached " + maxIterations + " iterations." );
+		}
+		
+		System.out.println(A.multiply(oldX));
+		System.out.println(b);
 		return oldX;
 		
 	}
