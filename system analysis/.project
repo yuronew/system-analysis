@@ -3,6 +3,7 @@
 	<name>system analysis</name>
 	<comment></comment>
 	<projects>
+		<project>la4j</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

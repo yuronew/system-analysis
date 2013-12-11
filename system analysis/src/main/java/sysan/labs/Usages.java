@@ -95,7 +95,7 @@ public class Usages {
 		}
     	    	
     	try{    
-    		//Vector lambdas = lambdasMatrix.withSolver(SOLVER).solve(vector);
+    		//Vector lambdas = lambdasMatrix//    		
     		Vector init = LinearAlgebra.BASIC1D_FACTORY.createVector(lambdasMatrix.columns());
     		Vector lambdas = NonlinearConjugateGradientMethod.solve(lambdasMatrix, vector, init, eps);
     		Vector check = lambdasMatrix.multiply(lambdas);    		
